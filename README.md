@@ -108,8 +108,8 @@ interface IBasket {
 export interface IOderFormsData {
     getUserInfo(field: keyof IOrderForm): void; // Получить информацию о пользователе
 	setInputField(field: keyof IOrderForm, value: string): void; // Установить значения отдельных пунктов информации о пользователе
-	validation(): void; // Валидация формы ввода данных пользователя
-	clearUser(): void; // Очистить хранимые данные пользователя
+	validateOrder(): Partial<Record<keyof IOrderForm, string>>; // Валидация формы ввода данных пользователя
+	clearOrderData(): void; // Очистить хранимые данные пользователя
 }
 
 ```
@@ -230,14 +230,14 @@ interface IApiResponse {
 
 - order: IOrderForm; // объект с данными пользователя
 - events: IEvents; // брокер событий
--formErrors: Partial<Record<keyof IOrderForm, string>>; // ошибки при заполнении формы
+- formErrors: Partial<Record<keyof IOrderForm, string>>; // ошибки при заполнении формы
 
 Класс использует следующие методы:
 
 - setInputField(field: keyof IOrderForm, value: string): void; // сохранение данных пользователя (для каждого поля отдельно)
 - getUserInfo(): IOrderForm; // передача данных пользователя на сервер
-- validateOrder(): boolean; // валидация дыннах
-- clearUser(): void; // очистка данных пользователя
+- validateOrder(): Partial<Record<keyof IOrderForm, string>>; // валидация дыннах
+- clearOrderData(): void; // очистка данных пользователя
   
 
 ### Классы представления
@@ -441,6 +441,5 @@ interface IApiResponse {
 - `Order:open` - открытие моадльного окна с адресом и способом оплаты товара
 - `contacts:open` - открытие модального окна с контактными данными пользователя(почта, телефон)
 - `formErrors:change` - обновление информации об ошибках, полученных при заполнении формы
-- `order:ready` - заполнены все поля фрмы
 - `contacts:submit` - оформление покупки
 - `Success:closed` - закрытие моадльного окна успешной покупки

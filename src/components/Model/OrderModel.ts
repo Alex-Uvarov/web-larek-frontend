@@ -21,13 +21,9 @@ export class OrderModel implements IOderFormsData {
 
 	setInputField(field: keyof IOrderForm, value: string): void {
 		this.order[field] = value;
-		
-		if(this.validateOrder()) {
-			this.events.emit('order:ready', this.order)
-		}
 	}
 
-	validateOrder(): boolean {
+	validateOrder(): Partial<Record<keyof IOrderForm, string>> {
 			const errors: typeof this.formErrors = {};
 			if (!this.order.email) {
 				errors.email = 'Укажите почту';
@@ -43,10 +39,10 @@ export class OrderModel implements IOderFormsData {
 			}
 			this.formErrors = errors;
 			this.events.emit('formErrors:change', this.formErrors);
-			return Object.keys(errors).length === 0;
+			return errors;
 	}
 
-	clearUser(): void {
+	clearOrderData(): void {
 		this.order = {
 			payment: '',
 			address: '',

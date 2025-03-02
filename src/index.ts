@@ -159,24 +159,30 @@ events.on('ItemBasket:delete', (data: {productID: string}) => {
 
 // Открыть форму заказа
 events.on('Order:open', () => {
+    const { address: addressError, payment: paymentError } = orderData.validateOrder(); 
 	modal.render({
 		content: addressForm.render({
-			address: '',
-			payment: '',
-			valid: false,
-			errors: ['Выберите способ оплаты; Укажите адрес'],
+			address: orderData.getUserInfo().address,
+			payment: orderData.getUserInfo().payment,
+			valid: !addressError && !paymentError,
+			errors: Object.values({ addressError, paymentError })
+                    .filter((i) => !!i)
+                    .join('; '),
 		}),
 	});
 });
 
 // Открыть контактов
 events.on('contacts:open', () => {
+    const { phone: phoneError, email: emailError } = orderData.validateOrder();
 	modal.render({
 		content: contactsForm.render({
-			phone: '',
-			email: '',
-			valid: false,
-			errors: ['Укажите почту; Укажите телефон'],
+			phone: orderData.getUserInfo().phone,
+			email: orderData.getUserInfo().email,
+			valid: !phoneError && !emailError,
+			errors: Object.values({ phoneError, emailError })
+                    .filter((i) => !!i)
+                    .join('; '),
 		}),
 	});
 });
@@ -198,6 +204,7 @@ events.on(
 	/^order\..*:change/,
 	(data: { field: keyof IOrderForm; value: string }) => {
 		orderData.setInputField(data.field, data.value);
+        orderData.validateOrder();
 	}
 );
 
@@ -205,12 +212,10 @@ events.on(
 	/^contacts\..*:change/,
 	(data: { field: keyof IOrderForm; value: string }) => {
 		orderData.setInputField(data.field, data.value);
+        orderData.validateOrder();
 	}
 );
 
-events.on('order:ready', () => {
-    contactsForm.valid = true;
-})
 
 events.on('contacts:submit', () => {
 	let totalAmountFinall = 0;
@@ -232,6 +237,7 @@ events.on('contacts:submit', () => {
 			page.counter = basketData.getCountOfProducts();
 			addressForm.clearForm();
 			contactsForm.clearForm();
+            orderData.clearOrderData();
 		})
 		.catch((err) => {
 			console.log('Ошибка оформления заказа', err);

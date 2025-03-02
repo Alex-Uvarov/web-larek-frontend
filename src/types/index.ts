@@ -46,8 +46,8 @@ export type TPayment = 'card' | 'cash';
 export interface IOderFormsData {
     getUserInfo(field: keyof IOrderForm): void;
 	setInputField(field: keyof IOrderForm, value: string): void;
-	validateOrder(): void;
-	clearUser(): void;
+	validateOrder(): Partial<Record<keyof IOrderForm, string>>;
+	clearOrderData(): void;
 }
 
 //Типы данных для формы
