@@ -4,16 +4,16 @@ import { BasketModel } from './components/Model/BasketModel';
 import { ProductsModel } from './components/Model/ProductsModel';
 import { OrderModel } from './components/Model/OrderModel';
 import { Basket } from './components/view/Basket';
-import { OrderFormAddressView } from './components/view/Forms/AddressForm';
-import { OrderFormContactsView } from './components/view/Forms/ContactsForm';
-import { Modal } from './components/view/Modals';
+import { AddressForm } from './components/view/Forms/AddressForm';
+import { ContactsForm } from './components/view/Forms/ContactsForm';
+import { Modal } from './components/view/Modal';
 import { Page } from './components/view/Page';
 import { BasketProductView } from './components/view/Product/BasketProduct';
 import { CatalogProductView } from './components/view/Product/CatalogProduct';
 import { PreviewProductView } from './components/view/Product/PreviewProduct';
 import { Success } from './components/view/Success';
 import './scss/styles.scss';
-import { IApiResponse, IOrderForm, IProduct} from './types';
+import { IOrderForm, IProduct} from './types';
 import { API_URL, CDN_URL } from './utils/constants';
 import { cloneTemplate, ensureElement } from './utils/utils';
 
@@ -45,19 +45,16 @@ const modal = new Modal(ensureElement<HTMLElement>('#modal-container'), events);
 
 //Переиспользуемые части интерфейса
 const basket = new Basket(cloneTemplate(basketTemplate), events);
-const addressForm = new OrderFormAddressView(cloneTemplate(orderTemplate), events);
-const contactsForm = new OrderFormContactsView(cloneTemplate(contactsTemplate), events);
+const addressForm = new AddressForm(cloneTemplate(orderTemplate), events);
+const contactsForm = new ContactsForm(cloneTemplate(contactsTemplate), events);
 const successWindow = new Success(cloneTemplate(successTemplate), events);
 
 //Бизнес логика
 
 // Получаем продукты с сервера
-api.get('/product/')
+api.getProductsList()
     .then(res => {
-        return <IApiResponse>res;
-    })
-    .then(res => {
-        productsData.setProducts(res.items);
+        productsData.setProducts(res);
     })
     .catch(console.error);
 
@@ -65,14 +62,7 @@ api.get('/product/')
 events.on('Products:loaded', () => {
     page.catalog = productsData.getProducts().map(item => {
         const card = new CatalogProductView(cloneTemplate(cardCatalogTemplate), events);
-        return card.render({
-            title: item.title,
-            description: item.description,
-            price: item.price,
-            category: item.category,
-            id: item.id,
-            image: item.image,
-        });
+        return card.render(item);
     });
 
     page.counter = basketData.getProducts().length;
@@ -92,14 +82,14 @@ events.on('product: selected', (item: IProduct) => {
         const cardBasket = basketData.getOneProduct(cardID);
 
         if(cardBasket) {
-            preview.ButtonText = 'Удалить из корзины'
+            preview.buttonText = 'Удалить из корзины'
         } else {
-            preview.ButtonText = 'Купить'
+            preview.buttonText = 'Купить'
         }
 
         if(card.price === null) {
-            preview.ButtonText = 'Покупка невозможна'
-            preview.ButtonState = true;
+            preview.buttonText = 'Покупка невозможна'
+            preview.buttonState = true;
         }
     }
 
@@ -131,10 +121,10 @@ events.on('previewButton: click', () => {
     const preview = new PreviewProductView(cloneTemplate(cardPreviewTemplate), events);
     if(basketData.getOneProduct(cardID)) {
         basketData.removeFromBasket(productsData.getOneProduct(cardID));
-        preview.ButtonText = 'Купить'
+        preview.buttonText = 'Купить'
     } else {
         basketData.addToBasket(productsData.getOneProduct(cardID));
-        preview.ButtonText = 'Удалить из корзины'
+        preview.buttonText = 'Удалить из корзины'
     }
 })
 
@@ -152,11 +142,7 @@ events.on('Basket:open', () => {
 events.on('BasketModel:changed', () => {
     page.counter = basketData.getCountOfProducts();
 
-    const basketItems = basketData.getProducts().map((item, index) => {
-        const basketProduct = new BasketProductView(cloneTemplate(cardBasketTemplate), events);
-        basketProduct.index = index + 1;
-        return basketProduct.render(item);
-    })
+    const basketItems = renderBasketProducts();
 
     basket.render({
         items: basketItems,
@@ -173,49 +159,36 @@ events.on('ItemBasket:delete', (data: {productID: string}) => {
 
 // Открыть форму заказа
 events.on('Order:open', () => {
-	const { address: addressError, payment: paymentError } =
-		orderData.validation();
-	const { address, payment } = orderData.getUserInfo();
 	modal.render({
 		content: addressForm.render({
-			address: orderData.getUserInfo().address,
-			payment: orderData.getUserInfo().payment,
-			valid: !(addressError || paymentError),
-			errors: !(address || payment)
-				? ''
-				: Object.values({ paymentError, addressError })
-						.filter((i) => !!i)
-						.join('; '),
+			address: '',
+			payment: '',
+			valid: false,
+			errors: ['Выберите способ оплаты; Укажите адрес'],
 		}),
 	});
 });
 
 // Открыть контактов
 events.on('contacts:open', () => {
-	const { phone: phoneError, email: mailError } = orderData.validation();
-	const { phone, email } = orderData.getUserInfo();
 	modal.render({
 		content: contactsForm.render({
-			phone: orderData.getUserInfo().phone,
-			email: orderData.getUserInfo().email,
-			valid: !(phoneError && mailError),
-			errors: !(phone && email)
-				? ''
-				: Object.values({ phoneError, mailError })
-						.filter((i) => !!i)
-						.join('; '),
+			phone: '',
+			email: '',
+			valid: false,
+			errors: ['Укажите почту; Укажите телефон'],
 		}),
 	});
 });
 
 // Изменилось состояние валидации формы
-events.on('user:changed', (errors: Partial<IOrderForm>) => {
+events.on('formErrors:change', (errors: Partial<IOrderForm>) => {
 	const { address, payment, phone, email } = errors;
-	addressForm.valid = !(address || payment);
+	addressForm.valid = !address && !payment;
 	addressForm.errors = Object.values({ address, payment })
 		.filter((i) => !!i)
 		.join('; ');
-	contactsForm.valid = !(phone || email);
+	contactsForm.valid = !phone && !email;
 	contactsForm.errors = Object.values({ phone, email })
 		.filter((i) => !!i)
 		.join('; ');
@@ -232,9 +205,12 @@ events.on(
 	/^contacts\..*:change/,
 	(data: { field: keyof IOrderForm; value: string }) => {
 		orderData.setInputField(data.field, data.value);
-		contactsForm.validateForm();
 	}
 );
+
+events.on('order:ready', () => {
+    contactsForm.valid = true;
+})
 
 events.on('contacts:submit', () => {
 	let totalAmountFinall = 0;
@@ -253,8 +229,6 @@ events.on('contacts:submit', () => {
 			totalAmountFinall = answerOrder.total;
 			modal.render({ content: successWindow.render({ total: totalAmountFinall }) });
 			basketData.clearBasket();
-			addressForm.clearAll();
-			contactsForm.clearAll();
 			page.counter = basketData.getCountOfProducts();
 			addressForm.clearForm();
 			contactsForm.clearForm();

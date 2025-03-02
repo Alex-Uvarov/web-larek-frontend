@@ -4,7 +4,7 @@ import { IEvents } from "../../base/events";
 
 export interface IFormState {
 	valid: boolean;
-	errors: string;
+	errors: string[];
 }
 
 export class Form<T> extends Component<IFormState> {
@@ -33,7 +33,7 @@ export class Form<T> extends Component<IFormState> {
 		});
 	}
 
-	protected onInputChange(field: keyof T, value: string) {
+	protected onInputChange(field: keyof T, value: string): void {
 		this.events.emit(`${this.container.name}.${String(field)}:change`, {
 			field,
 			value,
@@ -56,21 +56,21 @@ export class Form<T> extends Component<IFormState> {
 		return this._errors.textContent;
 	}
 
-	render(state: Partial<T> & IFormState) {
+	render(state: Partial<T> & IFormState): HTMLFormElement {
 		const { valid, errors, ...inputs } = state;
 		super.render({ valid, errors });
 		Object.assign(this, inputs);
 		return this.container;
 	}
 
-	updateForm() {
+	updateForm(): void {
 		const inputs = this.container.querySelectorAll('input');
 		inputs.forEach((input) => (input.value = ''));
 		this.errors = '';
 		this.valid = false;
 	}
 
-	clearForm() {
+	clearForm(): void {
 		const inputs = this.container.querySelectorAll('input');
 		inputs.forEach((input) => (input.value = ''));
 		this.errors = '';

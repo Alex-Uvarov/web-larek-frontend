@@ -186,11 +186,11 @@ interface IApiResponse {
 
 В классе используются следующие методы:
 
-- setProducts; // устанавливает список товаров
-- getProducts; // возвращает список товаров
-- getOneProduct; // возвращает товар по его id
-- setPreview; // устанавливает превью карточки
-- getPreview; // возвращает превью карточки
+- setProducts(products: IProduct[]): void; // устанавливает список товаров
+- getProducts(): IProduct[]; // возвращает список товаров
+- getOneProduct(id: string): IProduct; // возвращает товар по его id
+- setPreview(id: string | null): void; // устанавливает превью карточки
+- getPreview(): string | null; // возвращает превью карточки
 
 ////////////////////////////////////////////////////
 
@@ -207,14 +207,14 @@ interface IApiResponse {
 
 В классе используются следующие методы:
 
-- setProducts(products: IProduct[]); // устанавливает список товаров в корзине
+- setProducts(products: IProduct[]): void; // устанавливает список товаров в корзине
 - getProducts(): IProduct[]; // возвращает список товаров, хранящихся в корзине
 - getOneProduct(id: string): IProduct; // возвращает один товар по его id
-- addToBasket(product: IProduct); // добавляет товар в корзину
-- removeFromBasket(product: IProduct); // удаляет товар из корзины
-- getCountOfProducts(); // возвращает количество товаров в корзине
-- getTotalPrice(); // возвращает общую стоимость товаров в корзине
-- clearBasket(); // полная очистка корзины
+- addToBasket(product: IProduct): void; // добавляет товар в корзину
+- removeFromBasket(product: IProduct): void; // удаляет товар из корзины
+- getCountOfProducts(): number; // возвращает количество товаров в корзине
+- getTotalPrice(): number; // возвращает общую стоимость товаров в корзине
+- clearBasket(): void; // полная очистка корзины
 
 /////////////////////////////////////////////////////
 
@@ -228,16 +228,16 @@ interface IApiResponse {
 
   данные пользователя: 
 
-- order; // объект с данными пользователя
-- events; // брокер событий
-
+- order: IOrderForm; // объект с данными пользователя
+- events: IEvents; // брокер событий
+-formErrors: Partial<Record<keyof IOrderForm, string>>; // ошибки при заполнении формы
 
 Класс использует следующие методы:
 
-- saveUsesetInputFieldrData; // сохранение данных пользователя (для каждого поля отдельно)
-- getUserInfo; // передача данных пользователя на сервер
-- validation; // валидация
-- clearUser; // очистка данных пользователя
+- setInputField(field: keyof IOrderForm, value: string): void; // сохранение данных пользователя (для каждого поля отдельно)
+- getUserInfo(): IOrderForm; // передача данных пользователя на сервер
+- validateOrder(): boolean; // валидация дыннах
+- clearUser(): void; // очистка данных пользователя
   
 
 ### Классы представления
@@ -249,10 +249,10 @@ interface IApiResponse {
 
 Реализует методы:
 
-- set content; //Устанавливает содержимое модального окна
-- open; //Открывает модальное окно
-- close; //Закрытие модального окна;
-- render; //Рендеринг модального окна;
+- set content(value: HTMLElement); //Устанавливает содержимое модального окна
+- open(): void; //Открывает модальное окно
+- close(): void; //Закрытие модального окна;
+- render(content: IModalData): HTMLElement; //Рендеринг модального окна;
 
 Конструктор принимает селектор, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса EventEmitter для возможности инициации событий.
 
@@ -272,7 +272,7 @@ interface IApiResponse {
 Реализует методы:
  - set catalog(products: HTMLElement[]): установка каталога
  - set сounter(value: number); // установка счетчика
- - set locked(value: boolean); // установка блокировки корзины
+ - set locked(value: boolean); // установка блокировки прокрутки
 
  Конструктор принимает селектор, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса EventEmitter для возможности инициации событий.
 
@@ -315,12 +315,12 @@ interface IApiResponse {
 
 Реализует поля:
  - _description: HTMLElement; // краткое описание товара
- - protected _button: HTMLButtonElement; // кнопка добавления или удаления товара из корзины
+ - _button: HTMLButtonElement; // кнопка добавления или удаления товара из корзины
 
 Реализует методы:
  - set description(value:string); // установка краткого описания товара
- - set ButtonText(value: string); // установка текста кнопки товара
- - set ButtonState(value: boolean); // установка состояния кнопки
+ - set buttonText(value: string); // установка текста кнопки товара
+ - set buttonState(value: boolean); // установка состояния кнопки
 
   Конструктор принимает селектор, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса EventEmitter для возможности инициации событий.
 
@@ -343,8 +343,8 @@ interface IApiResponse {
 
 Поля:
 - _list: HTMLElement; // контейнер списка товаров
-- `_button: HTMLButtonElement; // кнопка оформления заказа
--  _total: HTMLElement; // контейнер общей суммы товаров в корзине
+- _button: HTMLButtonElement; // кнопка оформления заказа
+- _total: HTMLElement; // контейнер общей суммы товаров в корзине
 
 Методы:\
 - set items(items: HTMLElement[]); // установка массива товаров
@@ -352,7 +352,7 @@ interface IApiResponse {
 
 Конструктор принимает селектор, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса EventEmitter для возможности инициации событий.
 
-#### Класс OrderFormAddressView
+#### Класс AddressForm
 Отвечает за информацию о способе оплаты и адресе пользователя. Класс используется для отображения модального окна на странице сайта.
 
 Поля:
@@ -362,33 +362,35 @@ interface IApiResponse {
 Методы:
 - set payment(value: 'card' | 'cash'); // установка способа оплаты
 - set address(value: string); // установка адреса
-- clearAll(); // очистка полей
 
-#### Класс OrderFormContactsView
+#### Класс ContactsForm
 Отвечает за информацию о пользователе. Класс используется для отображения модального окна на странице сайта.
 
 Поля:
  - phoneNumber: HTMLInputElement; // поле ввода номера телефона
  - _email: HTMLInputElement; // поле ввода почты
- - phoneRegex; //Регулярное выражение для валидации номера телефона
- - emailRegex; //Регулярное выражение для валидации эл. почты
 
 Методы:
 - set phone(value: string); // установка номера телефона
 - set email(value: string); // установка почты
-- validateForm(); // валидация полей
-- clearAll(); // очистка полей
 
 #### Класс Form
 Отвечает за валидацию полей формы. Класс используется для отображения модального окна на странице сайта.
 
 Поля:
+- _submit: HTMLButtonElement; // Кнопка отправки формы
+- _errors: HTMLElement; //Контейнер для выводв ошибок формы
+
+
+Методы:
+
 - set valid(value: boolean); // флаг валидности формы
 - set errors(value: string); // ошибки в данных, введенных в форму
 - get errors(); // получение значений полей ошибок
-- updateForm(); // обновление полей
-- render(state: Partial<T> & IFormState); // Рендер разметки формы
-- onInputChange(field: keyof T, value: string) // Обновление валидности формы при вводе данных
+- updateForm(): void; // обновление полей
+- clearForm(): void; // очистка полей формы
+- render(state: Partial<T> & IFormState): HTMLFormElement; // Рендер разметки формы
+- onInputChange(field: keyof T, value: string): void; // Обновление валидности формы при вводе данных
 
 
 #### Класс Successe
@@ -428,7 +430,7 @@ interface IApiResponse {
 - `product: selected` — выбор товара, вызывает открытие модального окна с товаром.
 
 3. События, связанные с модальным окном, содержащем товар:
-- `previewButton: click` - клик на кнопку в карточке товара, тобавляет или удаляет товар из корзины
+- `previewButton: click` - клик на кнопку в карточке товара, добавляет или удаляет товар из корзины
 
 4. События, связанные с корзиной:
 - `Basket:open` — открытие корзины.
@@ -437,7 +439,8 @@ interface IApiResponse {
 
 5. События, связанные с формами оформления заказа:
 - `Order:open` - открытие моадльного окна с адресом и способом оплаты товара
-- `user:changed` - обновление информации о пользователе
 - `contacts:open` - открытие модального окна с контактными данными пользователя(почта, телефон)
+- `formErrors:change` - обновление информации об ошибках, полученных при заполнении формы
+- `order:ready` - заполнены все поля фрмы
 - `contacts:submit` - оформление покупки
 - `Success:closed` - закрытие моадльного окна успешной покупки

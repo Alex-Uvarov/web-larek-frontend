@@ -18,11 +18,11 @@ export class PreviewProductView extends CatalogProductView {
         this.setText(this._description, value);
     }
 
-    set ButtonText(value: string) {
+    set buttonText(value: string) {
         this.setText(this._button, value);
     }
 
-    set ButtonState(value: boolean) {
+    set buttonState(value: boolean) {
         this._button.disabled = value;
     }
 }

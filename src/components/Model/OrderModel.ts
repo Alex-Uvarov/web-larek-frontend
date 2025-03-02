@@ -1,4 +1,4 @@
-import { FormErrors, IOderFormsData, IOrderForm} from "../../types";
+import { IOderFormsData, IOrderForm} from "../../types";
 import { IEvents } from "../base/events";
 
 export class OrderModel implements IOderFormsData {
@@ -9,28 +9,26 @@ export class OrderModel implements IOderFormsData {
 		phone: '',
 		email: '',
 	};
+	protected formErrors: Partial<Record<keyof IOrderForm, string>> = {};
 
 	constructor(events: IEvents) {
 		this.events = events;
-		this.order = {
-			payment: '',
-			address: '',
-			phone: '',
-			email: '',
-		};
 	}
 
-	getUserInfo() {
+	getUserInfo(): IOrderForm {
 		return this.order;
 	}
 
-	setInputField(field: keyof IOrderForm, value: string) {
+	setInputField(field: keyof IOrderForm, value: string): void {
 		this.order[field] = value;
-		this.events.emit('order:change', this.order);
+		
+		if(this.validateOrder()) {
+			this.events.emit('order:ready', this.order)
+		}
 	}
 
-	validation() {
-			const errors: FormErrors = {};
+	validateOrder(): boolean {
+			const errors: typeof this.formErrors = {};
 			if (!this.order.email) {
 				errors.email = 'Укажите почту';
 			}
@@ -38,15 +36,17 @@ export class OrderModel implements IOderFormsData {
 				errors.phone = 'Укажите телефон';
 			}
 			if (!this.order.address) {
-				errors.address = 'Укажите адресс';
+				errors.address = 'Укажите адрес';
 			}
 			if (!this.order.payment) {
 				errors.payment = 'Выберите способ оплаты';
 			}
-			return errors;
+			this.formErrors = errors;
+			this.events.emit('formErrors:change', this.formErrors);
+			return Object.keys(errors).length === 0;
 	}
 
-	clearUser() {
+	clearUser(): void {
 		this.order = {
 			payment: '',
 			address: '',
